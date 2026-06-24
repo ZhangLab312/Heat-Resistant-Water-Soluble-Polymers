@@ -10,20 +10,20 @@ from tqdm import tqdm
 import time
 import numpy as np
 
-# 设置日志
+# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 def calculate_properties(smiles):
     """
-    计算分子的LogP和SA_Score
+    Calculate LogP and SA_Score of molecules
 
-    参数:
-    smiles: SMILES字符串
+    Parameters:
+    smiles: SMILES string
 
-    返回:
-    (logp, sa_score): LogP值和SA_Score值，如果计算失败则返回(None, None)
+    Returns:
+    (logp, sa_score): LogP value and SA_Score value, returns (None, None) if calculation fails
     """
     if not smiles or pd.isna(smiles) or str(smiles).strip() == '':
         return None, None
@@ -33,13 +33,13 @@ def calculate_properties(smiles):
         if mol is None:
             return None, None
 
-        # 计算LogP
+        # Calculate LogP
         logp = Crippen.MolLogP(mol)
 
-        # 计算SA_Score (使用简单的合成可及性评分)
-        # 这里使用分子量作为简单的SA_Score代理，实际中可以使用更复杂的算法
-        # 如果需要更精确的SA_Score，可以安装并使用专门的库
-        sa_score = Descriptors.MolWt(mol) / 100  # 简化版本
+        # Calculate SA_Score (using simple synthetic accessibility score)
+        # Here we use molecular weight as a simple SA_Score proxy; in practice, more complex algorithms can be used
+        # If more precise SA_Score is needed, you can install and use specialized libraries
+        sa_score = Descriptors.MolWt(mol) / 100  # Simplified version
 
         return logp, sa_score
     except Exception as e:
@@ -49,13 +49,13 @@ def calculate_properties(smiles):
 
 def process_chunk(args):
     """
-    处理一个数据块，计算LogP和SA_Score
+    Process a data chunk, calculate LogP and SA_Score
 
-    参数:
+    Parameters:
     args: (chunk_data, chunk_id, total_chunks)
 
-    返回:
-    result: 处理结果，包含计算后的数据和统计信息
+    Returns:
+    result: Processing result, contains calculated data and statistics
     """
     chunk_data, chunk_id, total_chunks = args
     processed_data = []
@@ -81,7 +81,7 @@ def process_chunk(args):
         smiles = row['smiles']
         logp, sa_score = calculate_properties(smiles)
 
-        # 创建新行数据
+        # Create new row data
         new_row = {
             'polymer_name': row['polymer_name'],
             'Median': row['Median'],
@@ -93,12 +93,12 @@ def process_chunk(args):
 
         if logp is not None and sa_score is not None:
             stats['success'] += 1
-            # 更新LogP统计
+            # Update LogP statistics
             stats['logp_stats']['sum'] += logp
             stats['logp_stats']['min'] = min(stats['logp_stats']['min'], logp)
             stats['logp_stats']['max'] = max(stats['logp_stats']['max'], logp)
 
-            # 更新SA_Score统计
+            # Update SA_Score statistics
             stats['sa_stats']['sum'] += sa_score
             stats['sa_stats']['min'] = min(stats['sa_stats']['min'], sa_score)
             stats['sa_stats']['max'] = max(stats['sa_stats']['max'], sa_score)
@@ -117,7 +117,7 @@ def process_chunk(args):
 
 
 def count_lines(file_path):
-    """高效计算大文件的行数"""
+    """Efficiently count lines of a large file"""
     count = 0
     with open(file_path, 'rb') as f:
         for line in f:
@@ -127,37 +127,37 @@ def count_lines(file_path):
 
 def add_properties_parallel(input_file, output_file, num_processes=None, chunksize=10000):
     """
-    使用多进程计算分子的LogP和SA_Score并添加到文件中
+    Calculate LogP and SA_Score of molecules using multiprocessing and add to file
 
-    参数:
-    input_file: 输入文件路径
-    output_file: 输出文件路径
-    num_processes: 使用的进程数，默认为CPU核心数
-    chunksize: 每个进程处理的数据块大小
+    Parameters:
+    input_file: Input file path
+    output_file: Output file path
+    num_processes: Number of processes to use, defaults to CPU core count
+    chunksize: Data chunk size per process
     """
-    # 检查输入文件是否存在
+    # Check if input file exists
     if not os.path.exists(input_file):
         logger.error(f"Input file not found: {input_file}")
         return 0, 0, {}, {}
 
-    # 获取文件总行数
+    # Get total file rows
     logger.info("Counting total rows...")
-    total_rows = count_lines(input_file) - 1  # 减去标题行
+    total_rows = count_lines(input_file) - 1  # Subtract header line
     logger.info(f"Total rows to process: {total_rows:,}")
 
-    # 设置进程数
+    # Set number of processes
     if num_processes is None:
         num_processes = mp.cpu_count()
     logger.info(f"Using {num_processes} processes")
     logger.info("Calculating LogP and SA_Score for all molecules")
 
-    # 读取整个文件
+    # Read the entire file
     logger.info("Reading input file...")
     df = pd.read_csv(input_file)
     total_rows = len(df)
     logger.info(f"Loaded {total_rows:,} rows into memory")
 
-    # 分割数据为多个块
+    # Split data into multiple chunks
     chunk_size = max(1, total_rows // num_processes)
     chunks = []
     for i in range(0, total_rows, chunk_size):
@@ -166,7 +166,7 @@ def add_properties_parallel(input_file, output_file, num_processes=None, chunksi
 
     logger.info(f"Split data into {len(chunks)} chunks")
 
-    # 使用多进程处理
+    # Process using multiprocessing
     start_time = time.time()
     all_processed_data = []
     all_stats = {
@@ -186,34 +186,34 @@ def add_properties_parallel(input_file, output_file, num_processes=None, chunksi
     }
 
     with mp.Pool(processes=num_processes) as pool:
-        # 使用imap_unordered获取结果，同时显示进度
+        # Use imap_unordered to get results while showing progress
         results = list(tqdm(
             pool.imap_unordered(process_chunk, chunks),
             total=len(chunks),
             desc="Processing chunks"
         ))
 
-        # 合并结果
+        # Merge results
         for result in results:
             all_processed_data.extend(result['data'])
 
-            # 合并统计信息
+            # Merge statistics
             stats = result['stats']
             all_stats['total'] += stats['total']
             all_stats['success'] += stats['success']
             all_stats['failed'] += stats['failed']
 
-            # 合并LogP统计
+            # Merge LogP statistics
             all_stats['logp_stats']['sum'] += stats['logp_stats']['sum']
             all_stats['logp_stats']['min'] = min(all_stats['logp_stats']['min'], stats['logp_stats']['min'])
             all_stats['logp_stats']['max'] = max(all_stats['logp_stats']['max'], stats['logp_stats']['max'])
 
-            # 合并SA_Score统计
+            # Merge SA_Score statistics
             all_stats['sa_stats']['sum'] += stats['sa_stats']['sum']
             all_stats['sa_stats']['min'] = min(all_stats['sa_stats']['min'], stats['sa_stats']['min'])
             all_stats['sa_stats']['max'] = max(all_stats['sa_stats']['max'], stats['sa_stats']['max'])
 
-    # 计算平均LogP和SA_Score
+    # Calculate average LogP and SA_Score
     if all_stats['success'] > 0:
         avg_logp = all_stats['logp_stats']['sum'] / all_stats['success']
         avg_sa = all_stats['sa_stats']['sum'] / all_stats['success']
@@ -221,13 +221,13 @@ def add_properties_parallel(input_file, output_file, num_processes=None, chunksi
         avg_logp = 0
         avg_sa = 0
 
-    # 保存处理后的数据
+    # Save processed data
     logger.info("Saving processed data with LogP and SA_Score...")
     output_df = pd.DataFrame(all_processed_data)
     output_columns = ['polymer_name', 'Median', 'smiles', 'Predicted_Median', 'LogP', 'SA_Score']
     output_df[output_columns].to_csv(output_file, index=False)
 
-    # 最终统计
+    # Final statistics
     elapsed_time = time.time() - start_time
     processing_rate = all_stats['total'] / elapsed_time if elapsed_time > 0 else 0
 
@@ -251,10 +251,10 @@ def add_properties_parallel(input_file, output_file, num_processes=None, chunksi
         logger.info(f"  Maximum SA_Score: {all_stats['sa_stats']['max']:.4f}")
         logger.info(f"  Average SA_Score: {avg_sa:.4f}")
 
-    # 保存统计信息
+    # Save statistics
     stats_file = output_file.replace('.csv', '_properties_stats.csv')
 
-    # 准备统计DataFrame
+    # Prepare statistics DataFrame
     stats_data = []
     stats_data.append(['Total molecules', all_stats['total']])
     stats_data.append(['Successful calculations', all_stats['success']])
@@ -279,42 +279,42 @@ def add_properties_parallel(input_file, output_file, num_processes=None, chunksi
 
 
 if __name__ == "__main__":
-    # 输入参数 - 请根据你的实际情况修改这些路径
-    input_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\合理分子2.csv"  # 包含聚合物数据的文件
-    output_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\合理分子3.csv"  # 包含LogP和SA_Score的输出文件
+    # Input parameters - please modify these paths according to your actual situation
+    input_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\合理分子2.csv"  # File containing polymer data
+    output_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\合理分子3.csv"  # Output file containing LogP and SA_Score
 
-    # 检查文件是否存在
+    # Check if file exists
     if not os.path.exists(input_file):
-        print(f"错误: 输入文件不存在: {input_file}")
-        print("请检查文件路径是否正确")
+        print(f"Error: Input file does not exist: {input_file}")
+        print("Please check if the file path is correct")
         sys.exit(1)
 
-    # 运行计算
-    print(f"开始计算分子LogP和SA_Score的文件: {input_file}")
-    print(f"输出将保存到: {output_file}")
+    # Run calculation
+    print(f"Starting LogP and SA_Score calculation for file: {input_file}")
+    print(f"Output will be saved to: {output_file}")
 
-    # 使用所有可用的CPU核心
+    # Use all available CPU cores
     num_processes = mp.cpu_count()
-    print(f"使用 {num_processes} 个进程进行并行计算")
+    print(f"Using {num_processes} processes for parallel calculation")
 
     success_count, failed_count, logp_stats, sa_stats = add_properties_parallel(
         input_file=input_file,
         output_file=output_file,
         num_processes=num_processes,
-        chunksize=10000  # 每个进程处理的块大小
+        chunksize=10000  # Chunk size per process
     )
 
-    print(f"\n计算完成!")
-    print(f"成功计算LogP和SA_Score的分子数量: {success_count:,}")
-    print(f"计算失败的分子数量: {failed_count:,}")
+    print(f"\nCalculation completed!")
+    print(f"Number of molecules successfully calculated LogP and SA_Score: {success_count:,}")
+    print(f"Number of molecules with failed calculation: {failed_count:,}")
 
     if success_count > 0:
-        print(f"\nLogP统计:")
-        print(f"  最小LogP: {logp_stats['min']:.4f}")
-        print(f"  最大LogP: {logp_stats['max']:.4f}")
-        print(f"  平均LogP: {logp_stats['sum'] / success_count:.4f}")
+        print(f"\nLogP statistics:")
+        print(f"  Minimum LogP: {logp_stats['min']:.4f}")
+        print(f"  Maximum LogP: {logp_stats['max']:.4f}")
+        print(f"  Average LogP: {logp_stats['sum'] / success_count:.4f}")
 
-        print(f"\nSA_Score统计:")
-        print(f"  最小SA_Score: {sa_stats['min']:.4f}")
-        print(f"  最大SA_Score: {sa_stats['max']:.4f}")
-        print(f"  平均SA_Score: {sa_stats['sum'] / success_count:.4f}")
+        print(f"\nSA_Score statistics:")
+        print(f"  Minimum SA_Score: {sa_stats['min']:.4f}")
+        print(f"  Maximum SA_Score: {sa_stats['max']:.4f}")
+        print(f"  Average SA_Score: {sa_stats['sum'] / success_count:.4f}")

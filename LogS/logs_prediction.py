@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 from rdkit import rdBase
 rdBase.DisableLog('rdApp.*')
 
-# 配置参数
+# Configuration parameters
 CONFIG = {
     "input_file": r"E:\Python\pythonProject\new_t_predict\data\合理分子1.csv",
     "output_file": r"E:\Python\pythonProject\new_t_predict\data\合理分子2.csv",
@@ -62,26 +62,26 @@ class SolubilityPredictor:
         self._load_model_and_scaler()
 
     def _load_model_and_scaler(self):
-        print("加载模型与标准化器...")
+        print("Loading model and scaler...")
         self.scaler = joblib.load(self.config["scaler_path"])
         self.model = FNN(
             input_size=self.config["fingerprint"]["n_bits"],
             hidden_layers=self.config["nn_params"]["hidden_layers"],
-            dropout_rate=self.config["nn_params"]["dropout_rate"]  # 修复这里！
+            dropout_rate=self.config["nn_params"]["dropout_rate"]  # Fixed here
         )
         self.model.load_state_dict(torch.load(self.config["model_path"], map_location=self.device))
         self.model.to(self.device)
         self.model.eval()
-        print("模型加载完成 ✅")
+        print("Model loading completed ✅")
 
-    # ====================== ✅ SMILES 标准化（已保留） ======================
+    # ====================== ✅ SMILES standardization (retained) ======================
     def smiles_to_fingerprint(self, smiles):
         try:
             mol = Chem.MolFromSmiles(str(smiles))
             if not mol:
                 return None
 
-            # 标准化SMILES，确保同一物质结构一致
+            # Standardize SMILES to ensure consistent structure for the same substance
             canonical_smi = Chem.MolToSmiles(mol, canonical=True, isomericSmiles=False)
             mol = Chem.MolFromSmiles(canonical_smi)
             if not mol:
@@ -102,7 +102,7 @@ class SolubilityPredictor:
     def batch_smiles_to_fingerprints(self, smiles_list):
         features = []
         valid_indices = []
-        for i, smi in enumerate(tqdm(smiles_list, desc="生成指纹", leave=False)):
+        for i, smi in enumerate(tqdm(smiles_list, desc="Generate fingerprints", leave=False)):
             fp = self.smiles_to_fingerprint(smi)
             if fp is not None:
                 features.append(fp)
@@ -142,7 +142,7 @@ class SolubilityPredictor:
     def run(self):
         total_rows = sum(1 for _ in open(CONFIG["input_file"], encoding="utf-8")) - 1
         reader = pd.read_csv(CONFIG["input_file"], chunksize=CONFIG["chunk_size"], encoding="utf-8")
-        pbar = tqdm(total=total_rows, desc="预测进度")
+        pbar = tqdm(total=total_rows, desc="Prediction progress")
 
         for i, chunk in enumerate(reader):
             processed = self.process_chunk(chunk)
@@ -150,13 +150,13 @@ class SolubilityPredictor:
             pbar.update(len(chunk))
         pbar.close()
 
-        print("\n合并文件...")
+        print("\nMerging files...")
         dfs = []
         for f in sorted(os.listdir(CONFIG["output_chunks_dir"])):
             dfs.append(pd.read_csv(os.path.join(CONFIG["output_chunks_dir"], f)))
         final = pd.concat(dfs, ignore_index=True)
         final.to_csv(CONFIG["output_file"], index=False, encoding="utf-8")
-        print(f"✅ 完成！文件已保存至：{CONFIG['output_file']}")
+        print(f"✅ Completed! File saved to: {CONFIG['output_file']}")
 
 
 def main():

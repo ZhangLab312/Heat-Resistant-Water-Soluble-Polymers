@@ -7,76 +7,76 @@ import multiprocessing
 from multiprocessing import Pool, TimeoutError
 import sys
 
-# 文件路径
+# File path
 input_file = r"E:\Python\pythonProject\new_t_predict\data\cleaned_predictions.csv"
 output_file = r"E:\Python\pythonProject\new_t_predict\data\fragment\t_fragment.csv"
 
-# 创建输出目录（如果不存在）
+# Create output directory (if not exists)
 os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-# 全局计数器，用于进度显示
+# Global counter for progress display
 processed_count = 0
 total_count = 0
 start_time = time.time()
 
 
 def fragment_molecule_wrapper(args):
-    """包装函数，用于多进程处理"""
+    """Wrapper function for multiprocessing"""
     idx, row = args
     return (idx, fragment_molecule(row))
 
 
 def fragment_molecule(row):
-    """处理单个分子，返回碎片列表或错误信息"""
+    """Process a single molecule, return fragment list or error message"""
     name, smiles = row['polymer_name'], row['smiles']
     try:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
-            return (name, smiles, [], "无效的SMILES")
+            return (name, smiles, [], "Invalid SMILES")
 
-        # 进行BRICS碎片化
+        # Perform BRICS fragmentation
         fragments = list(BRICS.BRICSDecompose(mol))
         return (name, smiles, list(set(fragments)), None)
     except Exception as e:
-        return (name, smiles, [], f"处理错误: {str(e)}")
+        return (name, smiles, [], f"Processing error: {str(e)}")
 
 
 def update_progress():
-    """更新并显示进度信息"""
+    """Update and display progress info"""
     global processed_count, total_count, start_time
     elapsed = time.time() - start_time
     percent = (processed_count / total_count) * 100 if total_count > 0 else 0
-    sys.stdout.write(f"\r处理进度: {processed_count}/{total_count} ({percent:.1f}%) | "
-                     f"用时: {elapsed:.1f}s | "
-                     f"预计剩余: {(elapsed / processed_count) * (total_count - processed_count):.1f}s "
-                     if processed_count > 0 else "\r开始处理...")
+    sys.stdout.write(f"\rProcessing progress: {processed_count}/{total_count} ({percent:.1f}%) | "
+                     f"Elapsed: {elapsed:.1f}s | "
+                     f"Est. remaining: {(elapsed / processed_count) * (total_count - processed_count):.1f}s "
+                     if processed_count > 0 else "\rStarting processing...")
     sys.stdout.flush()
 
 
 def main():
     global processed_count, total_count
 
-    # 读取输入文件
-    print("正在读取耐高温分子数据...")
+    # Read input file
+    print("Reading heat-resistant molecule data...")
     df = pd.read_csv(input_file)
     total_count = len(df)
-    print(f"找到 {total_count} 个耐高温分子")
+    print(f"Found {total_count} heat-resistant molecules")
 
-    # 准备结果列表
+    # Prepare result lists
     all_fragments = []
     skipped_molecules = []
     success_count = 0
 
-    print("\n开始碎片化处理 (超时: 2秒/分子):")
+    print("\nStart fragmentation processing (timeout: 2s/molecule):")
 
-    # 使用多进程池
+    # Use multiprocessing pool
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
         results = []
-        # 提交所有任务
+        # Submit all tasks
         for idx, row in df.iterrows():
             results.append(pool.apply_async(fragment_molecule_wrapper, [(idx, row)]))
 
-        # 处理结果
+        # Process results
         for res in results:
             try:
                 idx, result = res.get(timeout=2)
@@ -94,41 +94,41 @@ def main():
 
             except TimeoutError:
                 name, smiles = df.iloc[idx]['polymer_name'], df.iloc[idx]['smiles']
-                skipped_molecules.append((name, smiles, "处理超时"))
+                skipped_molecules.append((name, smiles, "Processing timeout"))
                 processed_count += 1
                 update_progress()
             except Exception as e:
                 name, smiles = df.iloc[idx]['polymer_name'], df.iloc[idx]['smiles']
-                skipped_molecules.append((name, smiles, f"未知错误: {str(e)}"))
+                skipped_molecules.append((name, smiles, f"Unknown error: {str(e)}"))
                 processed_count += 1
                 update_progress()
 
-    # 创建输出DataFrame
+    # Create output DataFrame
     result_df = pd.DataFrame(all_fragments, columns=['fragment'])
 
-    # 保存结果
+    # Save results
     result_df.to_csv(output_file, index=False)
 
-    # 保存跳过的分子信息
+    # Save skipped molecule info
     skipped_file = output_file.replace("_fragment.csv", "_skipped.csv")
     skipped_df = pd.DataFrame(skipped_molecules, columns=['polymer_name', 'smiles', 'reason'])
     skipped_df.to_csv(skipped_file, index=False)
 
-    # 打印统计信息
+    # Print statistics
     print("\n\n" + "=" * 60)
-    print("碎片化处理完成!")
-    print(f"总分子数: {total_count}")
-    print(f"成功处理: {success_count}")
-    print(f"跳过分子: {len(skipped_molecules)}")
-    print(f"生成碎片总数: {len(result_df)}")
-    print(f"碎片结果保存至: {output_file}")
-    print(f"跳过分子列表保存至: {skipped_file}")
+    print("Fragmentation processing completed!")
+    print(f"Total molecule count: {total_count}")
+    print(f"Successfully processed: {success_count}")
+    print(f"Skipped molecules: {len(skipped_molecules)}")
+    print(f"Total fragments generated: {len(result_df)}")
+    print(f"Fragment results saved to: {output_file}")
+    print(f"Skipped molecule list saved to: {skipped_file}")
 
-    # 显示前5个跳过的分子
+    # Show first 5 skipped molecules
     if skipped_molecules:
-        print("\n跳过的分子示例:")
+        print("\nExamples of skipped molecules:")
         for i, (name, smiles, reason) in enumerate(skipped_molecules[:5]):
-            print(f"{i + 1}. {name[:50]}... | 原因: {reason}")
+            print(f"{i + 1}. {name[:50]}... | Reason: {reason}")
     print("=" * 60)
 
 
@@ -136,4 +136,4 @@ if __name__ == "__main__":
     start_time = time.time()
     main()
     total_time = time.time() - start_time
-    print(f"总耗时: {total_time / 60:.2f} 分钟")
+    print(f"Total time elapsed: {total_time / 60:.2f} minutes")

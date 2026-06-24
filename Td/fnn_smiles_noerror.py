@@ -6,19 +6,19 @@ from rdkit.DataStructs import ConvertToNumpyArray
 from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
-import joblib  # 新增导入joblib用于保存标准化器
+import joblib  # Added import joblib for saving scaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 
-# 配置参数 - 添加scaler_path
+# Configuration parameters - added scaler_path
 CONFIG = {
     "input_csv": "E:/Python/pythonProject/t_predict/data/cleaned_predictions.csv",
     "output_csv": "E:/Python/pythonProject/t_predict/data/fnn_smiles_noerror_predictions.csv",
     "model_path": "E:/Python/pythonProject/t_predict/model/fnn_smiles_noerror_model5.pth",
-    "scaler_path": "E:/Python/pythonProject/t_predict/scaler/fnn_smiles_noerror_scaler5.pkl",  # 新增标准化器路径
+    "scaler_path": "E:/Python/pythonProject/t_predict/scaler/fnn_smiles_noerror_scaler5.pkl",  # Added scaler path
     "fingerprint": {
         "radius": 3,
         "n_bits": 1024
@@ -63,7 +63,7 @@ class FNN(nn.Module):
 
 
 def generate_features(smiles_list):
-    """生成特征并统计失败率"""
+    """Generate features and count failure rate"""
     features = []
     valid_indices = []
     total_count = len(smiles_list)
@@ -77,7 +77,7 @@ def generate_features(smiles_list):
 
     for idx, smi in enumerate(smiles_list):
         success = False
-        for _ in range(3):  # 尝试3次数据增强
+        for _ in range(3):  # Try 3 times for data augmentation
             try:
                 augmented_smi = augment_smiles(smi)
                 mol = Chem.MolFromSmiles(augmented_smi)
@@ -99,9 +99,9 @@ def generate_features(smiles_list):
             failed_count += 1
 
     failure_rate = failed_count / total_count
-    print(f"\n[特征生成报告]")
-    print(f"总SMILES数量: {total_count}")
-    print(f"完全处理失败的SMILES数量: {failed_count} ({failure_rate:.2%})")
+    print(f"\n[Feature Generation Report]")
+    print(f"Total SMILES count: {total_count}")
+    print(f"Number of SMILES that completely failed processing: {failed_count} ({failure_rate:.2%})")
     return np.array(features), valid_indices
 
 
@@ -203,39 +203,39 @@ def train_fnn(X_train, y_train, X_val, y_val):
 def main():
     df = pd.read_csv(CONFIG["input_csv"])
 
-    # 生成特征并获取有效索引
+    # Generate features and get valid indices
     X, valid_indices = generate_features(df["smiles"])
     y = df.iloc[valid_indices]["Median"].values
 
-    # 有效性统计
+    # Validity statistics
     unique_valid = np.unique(valid_indices)
     total_original = len(df)
     valid_original = len(unique_valid)
 
-    print("\n[数据有效性报告]")
-    print(f"原始数据总量: {total_original}")
-    print(f"有效处理的SMILES数量: {valid_original} ({valid_original / total_original:.2%})")
+    print("\n[Data Validity Report]")
+    print(f"Total original data: {total_original}")
+    print(f"Number of validly processed SMILES: {valid_original} ({valid_original / total_original:.2%})")
     print(
-        f"完全失效的SMILES数量: {total_original - valid_original} ({(total_original - valid_original) / total_original:.2%})")
+        f"Number of completely failed SMILES: {total_original - valid_original} ({(total_original - valid_original) / total_original:.2%})")
 
-    # 数据划分
+    # Data split
     X_train, X_test, y_train, y_test = stratified_split(X, y)
 
-    print("\n[数据集信息]")
-    print(f"有效特征维度: {X.shape[1]}")
-    print(f"增强后总样本量: {X.shape[0]}")
-    print(f"训练样本量: {X_train.shape[0]}")
-    print(f"测试样本量: {X_test.shape[0]}")
+    print("\n[Dataset Information]")
+    print(f"Valid feature dimensions: {X.shape[1]}")
+    print(f"Total sample count after augmentation: {X.shape[0]}")
+    print(f"Training sample count: {X_train.shape[0]}")
+    print(f"Test sample count: {X_test.shape[0]}")
 
-    # 训练模型
-    print("\n=== 开始训练 ===")
+    # Train model
+    print("\n=== Start Training ===")
     model, scaler = train_fnn(X_train, y_train, X_test, y_test)
 
-    # 保存标准化器
+    # Save scaler
     joblib.dump(scaler, CONFIG["scaler_path"])
-    print(f"\n标准化器已保存至: {CONFIG['scaler_path']}")
+    print(f"\nScaler has been saved to: {CONFIG['scaler_path']}")
 
-    # 预测函数
+    # Prediction function
     def predict(X_data):
         with torch.no_grad():
             X_scaled = scaler.transform(X_data)
@@ -245,22 +245,22 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    # 进行预测
+    # Making predictions
     train_pred = predict(X_train)
     test_pred = predict(X_test)
     final_pred = predict(X)
 
-    # 保存结果
+    # Save results
     df_pred = df.iloc[valid_indices].copy()
     df_pred["Predicted_Median"] = final_pred
     df_pred.to_csv(CONFIG["output_csv"], index=False)
 
-    # 性能评估
-    print("\n=== 模型性能 ===")
-    print(f"训练集 R²: {r2_score(y_train, train_pred):.4f}")
-    print(f"训练集 MAE: {mean_absolute_error(y_train, train_pred):.4f}")
-    print(f"测试集 R²: {r2_score(y_test, test_pred):.4f}")
-    print(f"测试集 MAE: {mean_absolute_error(y_test, test_pred):.4f}")
+    # Model Performance
+    print("\n=== Model Performance ===")
+    print(f"Training set R²: {r2_score(y_train, train_pred):.4f}")
+    print(f"Training set MAE: {mean_absolute_error(y_train, train_pred):.4f}")
+    print(f"Test set R²: {r2_score(y_test, test_pred):.4f}")
+    print(f"Test set MAE: {mean_absolute_error(y_test, test_pred):.4f}")
 
 
 if __name__ == "__main__":

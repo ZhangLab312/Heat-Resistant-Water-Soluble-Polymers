@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 def main():
-    # 1. 加载数据
+    # 1. Load data
     file_path = "E:/Python/pythonProject/new_t_predict/data/Tm_raw.csv"
 
     for encoding in ['gbk', 'gb2312', 'gb18030']:
@@ -21,11 +21,11 @@ def main():
         except:
             continue
 
-    # 2. 清洗数据
+    # 2. Clean data
     df['target'] = pd.to_numeric(df['target'], errors='coerce')
     df = df.dropna(subset=['target'])
 
-    # 3. 生成特征
+    # 3. Generate features
     X, y = [], []
     for _, row in df.iterrows():
         try:
@@ -41,20 +41,20 @@ def main():
 
     X, y = np.array(X), np.array(y)
 
-    print(f"数据集: {X.shape[0]} 个样本, {X.shape[1]} 个特征")
+    print(f"Dataset: {X.shape[0]} samples, {X.shape[1]} features")
 
-    # 4. 划分数据
+    # 4. Split data
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
 
-    # 5. 标准化特征
+    # 5. Standardize features
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # 6. 使用网格搜索寻找最佳alpha
-    print("\n使用网格搜索寻找最佳岭回归参数...")
+    # 6. Use grid search to find best ridge regression parameters
+    print("\nUse grid search to find best ridge regression parameters...")
 
     param_grid = {
         'alpha': [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
@@ -72,47 +72,47 @@ def main():
 
     grid_search.fit(X_train_scaled, y_train)
 
-    print(f"最佳alpha值: {grid_search.best_params_['alpha']}")
-    print(f"最佳交叉验证分数: {-grid_search.best_score_:.4f} (MSE)")
+    print(f"Best alpha value: {grid_search.best_params_['alpha']}")
+    print(f"Best cross-validation score: {-grid_search.best_score_:.4f} (MSE)")
 
-    # 7. 使用最佳模型
+    # 7. Use best model
     best_ridge = grid_search.best_estimator_
 
-    # 预测
+    # Predict
     y_train_pred = best_ridge.predict(X_train_scaled)
     y_test_pred = best_ridge.predict(X_test_scaled)
 
-    # 8. 计算指标
+    # 8. Compute metrics
     train_r2 = r2_score(y_train, y_train_pred)
     train_mae = mean_absolute_error(y_train, y_train_pred)
     test_r2 = r2_score(y_test, y_test_pred)
     test_mae = mean_absolute_error(y_test, y_test_pred)
 
-    # 9. 输出结果
+    # 9. Output results
     print("\n" + "=" * 60)
-    print("岭回归模型性能 (自动调参)")
+    print("Ridge Regression Model Performance (auto-tuned)")
     print("=" * 60)
-    print(f"训练集 R²:  {train_r2:.4f}")
-    print(f"训练集 MAE: {train_mae:.4f}")
-    print(f"测试集 R²:  {test_r2:.4f}")
-    print(f"测试集 MAE: {test_mae:.4f}")
-    print(f"过拟合程度:  {train_r2 - test_r2:.4f}")
+    print(f"Training set R²:  {train_r2:.4f}")
+    print(f"Training set MAE: {train_mae:.4f}")
+    print(f"Test set R²:  {test_r2:.4f}")
+    print(f"Test set MAE: {test_mae:.4f}")
+    print(f"Overfitting degree:  {train_r2 - test_r2:.4f}")
     print("=" * 60)
 
-    # 10. 特征重要性
-    print(f"\n模型截距: {best_ridge.intercept_:.4f}")
+    # 10. Feature importance
+    print(f"\nModel intercept: {best_ridge.intercept_:.4f}")
     coefficients = best_ridge.coef_
-    print(f"非零系数数量: {np.sum(coefficients != 0)}/{len(coefficients)}")
-    print(f"系数绝对值平均值: {np.abs(coefficients).mean():.6f}")
+    print(f"Number of non-zero coefficients: {np.sum(coefficients != 0)}/{len(coefficients)}")
+    print(f"Mean absolute coefficient: {np.abs(coefficients).mean():.6f}")
 
-    # 找出最重要的特征
+    # Find most important features
     top_n = 10
     abs_coef = np.abs(coefficients)
     top_indices = np.argsort(abs_coef)[-top_n:]
 
-    print(f"\n前{top_n}个最重要特征(系数绝对值最大):")
+    print(f"\nTop {top_n} most important features (largest absolute coefficient):")
     for i, idx in enumerate(reversed(top_indices)):
-        print(f"  特征 {idx}: 系数 = {coefficients[idx]:.6f}")
+        print(f"  Feature {idx}: Coefficient = {coefficients[idx]:.6f}")
 
 
 if __name__ == "__main__":

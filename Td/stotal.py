@@ -9,14 +9,14 @@ import multiprocessing as mp
 
 
 def calculate_chunk_stats(args):
-    """计算单个数据块的统计量"""
+    """Calculate statistics for a single data chunk"""
     chunk_idx, chunk = args
 
-    # 计算特征
+    # Calculate features
     chunk['-LogP'] = -chunk['LogP']
     chunk['HBD+HBA'] = chunk['HBD'] + chunk['HBA']
 
-    # 计算统计量
+    # Calculate statistics
     stats = {}
     for col, stat_name in [('-LogP', '-LogP'), ('HBD+HBA', 'HBD+HBA'), ('predicted_logS', 'logSmonomer')]:
         valid_data = chunk[col].dropna()
@@ -42,22 +42,22 @@ def calculate_chunk_stats(args):
 
 
 def calculate_chunk_stotal(args):
-    """计算单个数据块的Stotal"""
+    """Calculate Stotal for a single data chunk"""
     chunk_idx, chunk, stats, weights = args
 
-    # 保存原始列顺序
+    # Save original column order
     original_columns = chunk.columns.tolist()
 
-    # 计算特征
+    # Calculate features
     chunk['-LogP'] = -chunk['LogP']
     chunk['HBD+HBA'] = chunk['HBD'] + chunk['HBA']
 
-    # 标准化特征
+    # Standardize features
     chunk['z_-LogP'] = (chunk['-LogP'] - stats['-LogP']['mean']) / stats['-LogP']['std']
     chunk['z_HBD+HBA'] = (chunk['HBD+HBA'] - stats['HBD+HBA']['mean']) / stats['HBD+HBA']['std']
     chunk['z_logSmonomer'] = (chunk['predicted_logS'] - stats['logSmonomer']['mean']) / stats['logSmonomer']['std']
 
-    # 计算Stotal
+    # Calculate Stotal
     chunk['Stotal'] = (
             weights['w1'] * chunk['z_-LogP'] +
             weights['w2'] * chunk['z_HBD+HBA'] +
@@ -65,14 +65,14 @@ def calculate_chunk_stotal(args):
             weights['intercept']
     )
 
-    # 计算预测概率
-    chunk['预测概率'] = 1 / (1 + np.exp(-chunk['Stotal']))
+    # Calculate predicted probability
+    chunk['predicted_probability'] = 1 / (1 + np.exp(-chunk['Stotal']))
 
-    # 移除中间列
+    # Remove intermediate columns
     chunk = chunk.drop(['-LogP', 'HBD+HBA', 'z_-LogP', 'z_HBD+HBA', 'z_logSmonomer'], axis=1, errors='ignore')
 
-    # 恢复原始列顺序，并将新列添加在最后
-    final_columns = original_columns + ['Stotal', '预测概率']
+    # Restore original column order and add new columns at the end
+    final_columns = original_columns + ['Stotal', 'predicted_probability']
     chunk = chunk.reindex(columns=final_columns)
 
     return chunk_idx, chunk
@@ -80,45 +80,45 @@ def calculate_chunk_stotal(args):
 
 def calculate_stotal_parallel(csv_path, output_path, chunk_size=500000, n_workers=None):
     """
-    并行计算大数据集的Stotal
+    Calculate Stotal for large datasets in parallel
     """
 
-    # 给定的权重参数
+    # Given weight parameters
     weights = {
-        'w1': 0.0124,  # -LogP权重
-        'w2': 0.2086,  # HBD+HBA权重
-        'w3': 2.4509,  # logSmonomer权重
-        'intercept': -0.4345  # 截距项
+        'w1': 0.0124,  # -LogP weight
+        'w2': 0.2086,  # HBD+HBA weight
+        'w3': 2.4509,  # logSmonomer weight
+        'intercept': -0.4345  # Intercept term
     }
 
-    print(f"开始处理文件: {csv_path}")
-    print(f"输出文件: {output_path}")
-    print(f"使用并行处理，工作进程数: {n_workers or mp.cpu_count()}")
+    print(f"Start processing file: {csv_path}")
+    print(f"Output file: {output_path}")
+    print(f"Using parallel processing, number of workers: {n_workers or mp.cpu_count()}")
 
-    # 第一步：并行计算统计量
-    print("\n第一步: 并行计算特征的均值和标准差...")
+    # Step 1: Calculate statistics in parallel
+    print("\nStep 1: Calculate mean and standard deviation of features in parallel...")
 
-    # 确定工作进程数
+    # Determine number of workers
     if n_workers is None:
-        n_workers = min(mp.cpu_count(), 8)  # 最多使用8个进程
+        n_workers = min(mp.cpu_count(), 8)  # Use at most 8 processes
 
     total_rows = 0
     all_stats = []
 
-    # 检查文件中的必需列
-    print("检查输入文件列...")
+    # Check required columns in file
+    print("Check input file columns...")
     sample_df = pd.read_csv(csv_path, nrows=5)
     required_columns = ['LogP', 'HBD', 'HBA', 'predicted_logS']
     missing_columns = [col for col in required_columns if col not in sample_df.columns]
 
     if missing_columns:
-        print(f"错误: 输入文件缺少以下必需列: {missing_columns}")
-        print(f"文件中的列: {list(sample_df.columns)}")
+        print(f"Error: Input file is missing the following required columns: {missing_columns}")
+        print(f"Columns in file: {list(sample_df.columns)}")
         return None
 
-    print(f"找到必需列: {required_columns}")
+    print(f"Found required columns: {required_columns}")
 
-    # 使用多进程计算统计量
+    # Calculate statistics using multiprocessing
     with ProcessPoolExecutor(max_workers=n_workers) as executor:
         futures = []
         chunk_idx = 0
@@ -128,12 +128,12 @@ def calculate_stotal_parallel(csv_path, output_path, chunk_size=500000, n_worker
             chunk_idx += 1
             total_rows += len(chunk)
 
-        # 收集结果
+        # Collect results
         for future in futures:
             stats, rows = future.result()
             all_stats.append(stats)
 
-    # 合并统计量
+    # Merge statistics
     merged_stats = {}
     for feature in ['-LogP', 'HBD+HBA', 'logSmonomer']:
         total_sum = sum(s[feature]['sum'] for s in all_stats)
@@ -150,20 +150,20 @@ def calculate_stotal_parallel(csv_path, output_path, chunk_size=500000, n_worker
 
         merged_stats[feature] = {'mean': mean, 'std': std}
 
-    print(f"\n统计完成，共处理 {len(all_stats)} 块数据")
-    print("标准化参数:")
+    print(f"\nStatistics completed, processed {len(all_stats)} chunks of data")
+    print("Standardization parameters:")
     for feature, stat in merged_stats.items():
-        print(f"  {feature}: 均值={stat['mean']:.6f}, 标准差={stat['std']:.6f}")
+        print(f"  {feature}: mean={stat['mean']:.6f}, std={stat['std']:.6f}")
 
-    # 第二步：并行计算Stotal
-    print("\n第二步: 并行计算Stotal...")
+    # Step 2: Calculate Stotal in parallel
+    print("\nStep 2: Calculate Stotal in parallel...")
 
-    # 创建输出目录
+    # Create output directory
     output_dir = os.path.dirname(output_path)
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
 
-    # 用于排序的列表
+    # List for sorting
     results = []
 
     with ProcessPoolExecutor(max_workers=n_workers) as executor:
@@ -176,15 +176,15 @@ def calculate_stotal_parallel(csv_path, output_path, chunk_size=500000, n_worker
             futures[future] = chunk_idx
             chunk_idx += 1
 
-        # 按顺序收集结果
+        # Collect results in order
         processed_futures = []
         for future in futures:
             processed_futures.append((futures[future], future))
 
-        # 按块索引排序
+        # Sort by chunk index
         processed_futures.sort(key=lambda x: x[0])
 
-        # 写入文件
+        # Write to file
         first_chunk = True
         for idx, future in processed_futures:
             chunk_idx, chunk_result = future.result()
@@ -197,7 +197,7 @@ def calculate_stotal_parallel(csv_path, output_path, chunk_size=500000, n_worker
 
             results.append(chunk_result)
 
-    print(f"\n处理完成! 结果已保存到: {output_path}")
+    print(f"\nProcessing completed! Results saved to: {output_path}")
 
     return {
         'stats': merged_stats,
@@ -207,23 +207,23 @@ def calculate_stotal_parallel(csv_path, output_path, chunk_size=500000, n_worker
     }
 
 
-# 主程序
+# Main program
 if __name__ == "__main__":
-    # 文件路径
+    # File path
     input_csv = r"E:\Python\pythonProject\new_t_predict\data\合理分子3.csv"
     output_csv = r"E:\Python\pythonProject\new_t_predict\data\合理分子f.csv"
 
-    # 检查文件是否存在
+    # Check if file exists
     if not os.path.exists(input_csv):
-        print(f"错误: 文件不存在: {input_csv}")
+        print(f"Error: File does not exist: {input_csv}")
     else:
         print("=" * 60)
-        print("大数据集并行Stotal计算开始")
+        print("Large dataset parallel Stotal calculation started")
         print("=" * 60)
 
-        # 设置参数
-        chunk_size = 500000  # 50万条/块
-        n_workers = 4  # 使用4个进程
+        # Set parameters
+        chunk_size = 500000  # 500K rows/chunk
+        n_workers = 4  # Using 4 processes
 
         results = calculate_stotal_parallel(
             csv_path=input_csv,
@@ -234,21 +234,21 @@ if __name__ == "__main__":
 
         if results is not None:
             print("\n" + "=" * 60)
-            print("计算完成!")
+            print("Calculation completed!")
             print("=" * 60)
-            print(f"总处理行数: {results['total_rows']:,}")
-            print(f"处理数据块数: {results['total_chunks']}")
+            print(f"Total processed rows: {results['total_rows']:,}")
+            print(f"Number of processed data chunks: {results['total_chunks']}")
 
-            # 显示最终公式
-            print("\n使用的公式:")
+            # Show final formula
+            print("\nFormula used:")
             print(f"Stotal = {results['weights']['w1']} * z(-LogP) + "
                   f"{results['weights']['w2']} * z(HBD+HBA) + "
                   f"{results['weights']['w3']} * z(logSmonomer) + "
                   f"{results['weights']['intercept']}")
-            print("\n标准化参数:")
+            print("\nStandardization parameters:")
             print(
-                f"  -LogP: 均值={results['stats']['-LogP']['mean']:.6f}, 标准差={results['stats']['-LogP']['std']:.6f}")
+                f"  -LogP: mean={results['stats']['-LogP']['mean']:.6f}, std={results['stats']['-LogP']['std']:.6f}")
             print(
-                f"  HBD+HBA: 均值={results['stats']['HBD+HBA']['mean']:.6f}, 标准差={results['stats']['HBD+HBA']['std']:.6f}")
+                f"  HBD+HBA: mean={results['stats']['HBD+HBA']['mean']:.6f}, std={results['stats']['HBD+HBA']['std']:.6f}")
             print(
-                f"  logSmonomer: 均值={results['stats']['logSmonomer']['mean']:.6f}, 标准差={results['stats']['logSmonomer']['std']:.6f}")
+                f"  logSmonomer: mean={results['stats']['logSmonomer']['mean']:.6f}, std={results['stats']['logSmonomer']['std']:.6f}")

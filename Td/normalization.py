@@ -4,7 +4,7 @@ import sys
 
 
 def contains_si(mol):
-    """检查分子是否含有Si原子"""
+    """Check if molecule contains Si atoms"""
     for atom in mol.GetAtoms():
         if atom.GetSymbol() == 'Si':
             return True
@@ -12,15 +12,15 @@ def contains_si(mol):
 
 
 def count_benzene_rings(mol):
-    """计算分子中的苯环数量"""
-    # 获取所有环
+    """Count the number of benzene rings in the molecule"""
+    # Get all rings
     rings = mol.GetRingInfo().AtomRings()
     benzene_rings = 0
 
     for ring in rings:
-        # 检查是否为6元环
+        # Check if it is a 6-membered ring
         if len(ring) == 6:
-            # 检查是否所有原子都是碳且芳香
+            # Check if all atoms are carbon and aromatic
             all_carbon_aromatic = True
             for atom_idx in ring:
                 atom = mol.GetAtomWithIdx(atom_idx)
@@ -35,20 +35,20 @@ def count_benzene_rings(mol):
 
 
 def filter_molecules(input_file, output_file):
-    """过滤分子：去除含Si原子和超过一个苯环的分子"""
-    # 读取输入文件
+    """Filter molecules: remove molecules containing Si atoms and more than one benzene ring"""
+    # Read input file
     with open(input_file, 'r') as f_in, open(output_file, 'w') as f_out:
-        # 读取并写入标题行
+        # Read and write header line
         header = next(f_in)
         f_out.write(header)
 
-        # 处理每一行
+        # Process each line
         processed = 0
         kept = 0
         for line in f_in:
             processed += 1
             if processed % 10000 == 0:
-                print(f"已处理 {processed} 行，保留 {kept} 个分子")
+                print(f"Processed {processed} rows, kept {kept} molecules")
 
             parts = line.strip().split(',')
             if len(parts) < 3:
@@ -56,30 +56,30 @@ def filter_molecules(input_file, output_file):
 
             smiles = parts[0].strip()
 
-            # 从SMILES创建分子对象
+            # Create molecule object from SMILES
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
                 continue
 
-            # 检查是否含有Si原子
+            # Check if contains Si atoms
             if contains_si(mol):
                 continue
 
-            # 检查苯环数量
+            # Check benzene ring count
             benzene_count = count_benzene_rings(mol)
             if benzene_count > 1:
                 continue
 
-            # 通过所有检查，写入输出文件
+            # Passed all checks, write to output file
             f_out.write(line)
             kept += 1
 
-    print(f"处理完成！共处理 {processed} 个分子，保留 {kept} 个分子")
+    print(f"Processing completed! Processed {processed} molecules total, kept {kept} molecules")
 
 
 if __name__ == '__main__':
-    # 请在此处填写您的输入文件和输出文件路径
-    input_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\600_result.csv"  # 输入文件路径
-    output_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\result_nosicc.csv"  # 输出文件路径
+    # Please fill in your input and output file paths here
+    input_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\600_result.csv"  # Input file path
+    output_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\result_nosicc.csv"  # Output file path
 
     filter_molecules(input_file, output_file)

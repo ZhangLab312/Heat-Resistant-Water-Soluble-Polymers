@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 def main():
-    # 1. 加载数据
+    # 1. Load data
     file_path = "E:/Python/pythonProject/new_t_predict/data/Tm_raw.csv"
 
     for encoding in ['gbk', 'gb2312', 'gb18030']:
@@ -20,11 +20,11 @@ def main():
         except:
             continue
 
-    # 2. 清洗数据
+    # 2. Clean data
     df['target'] = pd.to_numeric(df['target'], errors='coerce')
     df = df.dropna(subset=['target'])
 
-    # 3. 生成特征
+    # 3. Generate features
     X, y = [], []
     for _, row in df.iterrows():
         try:
@@ -38,34 +38,34 @@ def main():
 
     X, y = np.array(X), np.array(y)
 
-    print(f"数据集: {X.shape[0]} 个样本, {X.shape[1]} 个特征")
+    print(f"Dataset: {X.shape[0]} samples, {X.shape[1]} features")
 
-    # 4. 划分数据
+    # 4. Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # 5. 标准化特征（非常重要！）
+    # 5. Standardize features (very important!)
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # 6. 训练普通线性回归
-    print("训练普通线性回归...")
+    # 6. Train ordinary linear regression
+    print("Training ordinary linear regression...")
     lr = LinearRegression(n_jobs=-1)
     lr.fit(X_train_scaled, y_train)
 
-    # 7. 预测和评估
+    # 7. Predict and evaluate
     y_train_pred = lr.predict(X_train_scaled)
     y_test_pred = lr.predict(X_test_scaled)
 
-    # 8. 输出结果
-    print(f"训练集 R²: {r2_score(y_train, y_train_pred):.4f}")
-    print(f"训练集 MAE: {mean_absolute_error(y_train, y_train_pred):.4f}")
-    print(f"测试集 R²: {r2_score(y_test, y_test_pred):.4f}")
-    print(f"测试集 MAE: {mean_absolute_error(y_test, y_test_pred):.4f}")
+    # 8. Output results
+    print(f"Training set R²: {r2_score(y_train, y_train_pred):.4f}")
+    print(f"Training set MAE: {mean_absolute_error(y_train, y_train_pred):.4f}")
+    print(f"Test set R²: {r2_score(y_test, y_test_pred):.4f}")
+    print(f"Test set MAE: {mean_absolute_error(y_test, y_test_pred):.4f}")
 
-    # 9. 模型信息
-    print(f"\n模型截距: {lr.intercept_:.4f}")
-    print(f"非零系数数量: {np.sum(lr.coef_ != 0)}/{len(lr.coef_)}")
+    # 9. Model info
+    print(f"\nModel intercept: {lr.intercept_:.4f}")
+    print(f"Number of non-zero coefficients: {np.sum(lr.coef_ != 0)}/{len(lr.coef_)}")
 
 
 if __name__ == "__main__":
