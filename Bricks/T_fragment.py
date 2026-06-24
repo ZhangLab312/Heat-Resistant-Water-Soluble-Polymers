@@ -8,8 +8,8 @@ from multiprocessing import Pool, TimeoutError
 import sys
 
 # File path
-input_file = r"E:\Python\pythonProject\new_t_predict\data\cleaned_predictions.csv"
-output_file = r"E:\Python\pythonProject\new_t_predict\data\fragment\t_fragment.csv"
+input_file = r"..\data\cleaned_predictions.csv"
+output_file = r"..\data\fragment\t_fragment.csv"
 
 # Create output directory (if not exists)
 os.makedirs(os.path.dirname(output_file), exist_ok=True)
