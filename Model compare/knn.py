@@ -129,7 +129,7 @@ def main():
         print(f"Training set size: {X_train.shape[0]}, Test set size: {X_test.shape[0]}")
 
         # Save train/test set (same as before)
-        output_dir = r"E:\Python\pythonProject\new_t_predict\画图数据"
+        output_dir = r"E:\Python\pythonProject\new_t_predict\plotting_data"
         save_train_test_split(train_df, test_df, output_dir,
                               train_filename="KNN_train.csv",
                               test_filename="KNN_test.csv")

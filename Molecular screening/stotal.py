@@ -210,8 +210,8 @@ def calculate_stotal_parallel(csv_path, output_path, chunk_size=500000, n_worker
 # Main program
 if __name__ == "__main__":
     # File path
-    input_csv = r"E:\Python\pythonProject\new_t_predict\data\合理分子3.csv"
-    output_csv = r"E:\Python\pythonProject\new_t_predict\data\合理分子f.csv"
+    input_csv = r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules_3.csv"
+    output_csv = r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules_f.csv"
 
     # Check if file exists
     if not os.path.exists(input_csv):

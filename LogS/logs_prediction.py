@@ -18,8 +18,8 @@ rdBase.DisableLog('rdApp.*')
 
 # Configuration parameters
 CONFIG = {
-    "input_file": r"E:\Python\pythonProject\new_t_predict\data\合理分子1.csv",
-    "output_file": r"E:\Python\pythonProject\new_t_predict\data\合理分子2.csv",
+    "input_file": r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules_1.csv",
+    "output_file": r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules_2.csv",
     "output_chunks_dir": r"E:\Python\pythonProject\new_t_predict\data\chunks",
 
     "model_path": r"E:/Python/pythonProject/new_t_predict/model/logs_model.pth",

@@ -151,7 +151,7 @@ def add_carbon_double_bond(mol, cc_fragment):
 def main():
     # Input file path
     file1 = r'E:\Python\pythonProject\new_t_predict\data\fragment\t_fragment_1.csv'
-    file2 = r'E:\Python\pythonProject\new_t_predict\data\fragment\水溶性聚合物_fragment_1.csv'
+    file2 = r'E:\Python\pythonProject\new_t_predict\data\fragment\water_soluble_polymers_fragment_1.csv'
     output_file = r'E:\Python\pythonProject\new_t_predict\data\result1_1.csv'
 
     # Read fragments

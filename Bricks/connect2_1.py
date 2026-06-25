@@ -170,7 +170,7 @@ def process_fragment_batch(args):
 def main():
     # File paths
     intermediates_file = r'E:\Python\pythonProject\new_t_predict\data\fragment\t_intermediates.csv'
-    fragments_file = r'E:\Python\pythonProject\new_t_predict\data\fragment\水溶性聚合物_fragment_1.csv'
+    fragments_file = r'E:\Python\pythonProject\new_t_predict\data\fragment\water_soluble_polymers_fragment_1.csv'
     output_file = r'E:\Python\pythonProject\new_t_predict\data\result2_1.csv'
 
     # Create output directory (if not exists)

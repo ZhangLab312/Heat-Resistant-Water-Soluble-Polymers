@@ -12,8 +12,8 @@ import tempfile
 
 # Configuration parameters
 CONFIG = {
-    "input_csv": r"E:\Python\pythonProject\new_t_predict\data\合理分子.csv",
-    "output_csv": r"E:\Python\pythonProject\new_t_predict\data\合理分子.csv",
+    "input_csv": r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules.csv",
+    "output_csv": r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules.csv",
     "model_path": r"E:\Python\pythonProject\new_t_predict\model\fnn_smiles_noerror_model.pth",
     "scaler_path": r"E:\Python\pythonProject\new_t_predict\scaler\fnn_smiles_noerror_scaler.pkl",
     "fingerprint": {

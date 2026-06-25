@@ -280,8 +280,8 @@ def add_properties_parallel(input_file, output_file, num_processes=None, chunksi
 
 if __name__ == "__main__":
     # Input parameters - please modify these paths according to your actual situation
-    input_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\合理分子2.csv"  # File containing polymer data
-    output_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\合理分子3.csv"  # Output file containing LogP and SA_Score
+    input_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\reasonable_molecules_2.csv"  # File containing polymer data
+    output_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\reasonable_molecules_3.csv"  # Output file containing LogP and SA_Score
 
     # Check if file exists
     if not os.path.exists(input_file):

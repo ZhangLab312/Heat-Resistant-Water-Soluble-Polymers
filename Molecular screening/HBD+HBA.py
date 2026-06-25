@@ -203,7 +203,7 @@ def process_large_csv_with_progress(csv_path, output_path=None, chunksize=10000,
 # Main program
 if __name__ == "__main__":
     # Set file path
-    input_csv = r"E:\Python\pythonProject\new_t_predict\data\原始数据.csv"
+    input_csv = r"E:\Python\pythonProject\new_t_predict\data\raw_data.csv"
 
     # Check if file exists
     if not os.path.exists(input_csv):
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         # Note: On Windows, multiprocessing must run inside if __name__ == '__main__'
         success = process_large_csv_with_progress(
             csv_path=input_csv,
-            output_path="../data/原始数据.csv",  # Can specify output path
+            output_path="../data/raw_data.csv",  # Can specify output path
             chunksize=10000,
             use_parallel=True  # Set to True for multiprocessing, False for single-process
         )

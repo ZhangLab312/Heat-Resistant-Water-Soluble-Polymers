@@ -376,9 +376,9 @@ def combine_data_and_find_pareto_front(reasonable_file, original_file, output_fi
 
 if __name__ == "__main__":
     # Input parameters
-    reasonable_file = r"E:\Python\pythonProject\new_t_predict\data\合理分子.csv"
-    original_file = r"E:\Python\pythonProject\new_t_predict\data\原始数据.csv"
-    output_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\突破帕累托前沿的合理分子.csv"
+    reasonable_file = r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules.csv"
+    original_file = r"E:\Python\pythonProject\new_t_predict\data\raw_data.csv"
+    output_file = "E:\\Python\\pythonProject\\new_t_predict\\data\\reasonable_molecules_pareto_front_breakthrough.csv"
 
     # Check if files exist
     if not os.path.exists(reasonable_file):

@@ -6,8 +6,8 @@ import time
 import os
 
 # File path
-input_file = r"E:\Python\pythonProject\new_t_predict\data\水溶性聚合物.csv"
-output_file = r"E:\Python\pythonProject\new_t_predict\data\fragment\水溶性聚合物_fragment.csv"
+input_file = r"E:\Python\pythonProject\new_t_predict\data\water_soluble_polymers.csv"
+output_file = r"E:\Python\pythonProject\new_t_predict\data\fragment\water_soluble_polymers_fragment.csv"
 
 # Create output directory (if not exists)
 os.makedirs(os.path.dirname(output_file), exist_ok=True)

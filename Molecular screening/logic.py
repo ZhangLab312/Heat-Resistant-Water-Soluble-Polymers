@@ -225,8 +225,8 @@ def calculate_stotal_and_logistic_regression(csv_path, output_path=None):
 
 # Main program
 if __name__ == "__main__":
-    input_csv = r"E:\Python\pythonProject\new_t_predict\data\二分类聚合物_with_delta.csv"
-    output_csv = r"E:\Python\pythonProject\new_t_predict\data\二分类聚合物_逻辑回归结果.csv"
+    input_csv = r"E:\Python\pythonProject\new_t_predict\data\binary_classification_polymers_with_delta.csv"
+    output_csv = r"E:\Python\pythonProject\new_t_predict\data\binary_classification_polymers_logistic_regression_results.csv"
 
     if os.path.exists(input_csv):
         results = calculate_stotal_and_logistic_regression(input_csv, output_csv)

@@ -189,7 +189,7 @@ def process_fragments(fragments):
 
 def main():
     # File paths
-    input_file = r'E:\Python\pythonProject\new_t_predict\data\fragment\水溶性聚合物_fragment_1.csv'
+    input_file = r'E:\Python\pythonProject\new_t_predict\data\fragment\water_soluble_polymers_fragment_1.csv'
     output_file = r'E:\Python\pythonProject\new_t_predict\data\fragment\s_intermediates.csv'
 
     # Read fragment file

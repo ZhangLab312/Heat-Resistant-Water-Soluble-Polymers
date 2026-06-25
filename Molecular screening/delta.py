@@ -118,8 +118,8 @@ class NewParameterCalculator:
 # Main program
 if __name__ == "__main__":
     # File path
-    input_file = r"E:\Python\pythonProject\new_t_predict\data\合理分子.csv"
-    output_file = r"E:\Python\pythonProject\new_t_predict\data\合理分子_delta.csv"
+    input_file = r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules.csv"
+    output_file = r"E:\Python\pythonProject\new_t_predict\data\reasonable_molecules_delta.csv"
 
     # Check if file exists
     if not os.path.exists(input_file):
